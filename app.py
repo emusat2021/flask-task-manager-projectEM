@@ -1,5 +1,4 @@
 import os
-import pprint
 from flask import (
     Flask, flash, render_template,
     redirect, request, session, url_for)
@@ -25,31 +24,14 @@ def get_tasks():
     tasks = mongo.db.tasks.find()
     return render_template("tasks.html", tasks=tasks)
 
-# by EM
-@app.route("/test-em") #, methods=["GET", "POST"]
-def test_em():
-    # print(request.method)
-    # print(request.headers)
-    # print(request.host)
-    # print(request.url)
-    # print(dir(request))
-    tasks = mongo.db.tasks.find()
-    print(tasks)
-    data = {"mancaruri": ["ciorba", "peste"]}
-    data["tasks"] = list(tasks)
-    pprint.pprint(data)
-    return render_template("em.html", data=data)
-
-# end by EM
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        print(request.form)
         # check if username already exists in db
         existing_user = mongo.db.users.find_one(
             {"username": request.form.get("username").lower()})
-        print("existing_user:", existing_user)
+
         if existing_user:
             flash("Username already exists")
             return redirect(url_for("register"))
@@ -58,12 +40,38 @@ def register():
             "username": request.form.get("username").lower(),
             "password": generate_password_hash(request.form.get("password"))
         }
-        result = mongo.db.users.insert_one(register)
-        print("result:", result)
+        mongo.db.users.insert_one(register)
+
         # put the new user into 'session' cookie
         session["user"] = request.form.get("username").lower()
         flash("Registration Successful!")
     return render_template("register.html")
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        # check if username exists in db
+        existing_user = mongo.db.users.find_one(
+            {"username": request.form.get("username").lower()})
+
+        if existing_user:
+            # ensure hashed password matches user input
+            if check_password_hash(
+                existing_user["password"], request.form.get("password")):
+                    session["user"] = request.form.get("username").lower()
+                    flash("Welcome, {}".format(request.form.get("username")))
+            else:
+                # invalid password match
+                flash("Incorrect Username and/or Password")
+                return redirect(url_for("login"))
+
+        else:
+            # username doesn't exist
+            flash("Incorrect Username and/or Password")
+            return redirect(url_for("login"))
+
+    return render_template("login.html")
 
 
 if __name__ == "__main__":
