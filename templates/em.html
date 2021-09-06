@@ -1,0 +1,13 @@
+It works2.<br>
+Mancaruri:<br>
+<ul>
+{% for mancare in data.mancaruri %}
+    <li>{{ mancare }}</li>
+{% endfor %}
+</ul>
+{{ data.mancaruri }}
+<br>
+{% for task in data.tasks  %}
+    <li> {{ task.task_name }}</li>
+{% endfor %}
+Sfarsit de date.
